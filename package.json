@@ -1,0 +1,21 @@
+{
+  "name": "typescript-design-patterns",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "strategy": "ts-node strategyPattern",
+    "observer": "ts-node observerPattern",
+    "factory": "ts-node factoryPattern",
+    "singleton": "ts-node singletonPattern",
+    "command": "ts-node commandPattern",
+    "adapter": "ts-node adapterPattern",
+    "facade": "ts-node facadePattern",
+    "decorator": "ts-node decoratorPattern"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "ts-node": "^8.4.1"
+  }
+}
