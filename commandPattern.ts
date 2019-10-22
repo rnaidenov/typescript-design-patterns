@@ -6,7 +6,7 @@
  * - It can be passed around as a parameter
  * 
  * - Requirements:
- *   * Interface with a single exectute() command (***Order***)
+ *   * Interface with a single exectute() command (***Command***)
  *   * Concrete implementations of ^__interface (***TakeOrder / CookOrder***) 
  *   * Objects making use ot ^__ concrete implementations 
  * 
@@ -18,17 +18,31 @@ interface CustomerRequirements {
     dietary: string[],
 }
 
-interface Order {
-    execute(): void
+
+interface Command {
+    execute(): any
 }
 
 
-class TakeOrder implements Order {
+abstract class Order implements Command {
+    constructor(protected customerReqs: CustomerRequirements) {}
 
-    constructor(private cr: CustomerRequirements) { }
+    abstract execute(): any
 
-    execute(): void {
-        const { dishes, dietary } = this.cr;
+    getCustomerReqs(): CustomerRequirements {
+        return this.customerReqs;
+    }
+}
+
+
+
+
+class TakeOrder extends Order {
+
+    constructor(cr: CustomerRequirements) { super(cr); }
+
+    execute(): CookOrder {
+        const { dishes, dietary } = this.customerReqs;
         const dishesList = dishes.reduce((acc, dish) => acc+=`* ${dish} \n`, '');
         const dietaryReqs = dietary.length  ? "They've got some dietary requirements. I'll make sure I put them down."
                                             : "They've no special dietary requiremetnts."
@@ -36,22 +50,19 @@ class TakeOrder implements Order {
         console.log("Taking down customers' order. Their order is: ");
         console.log(dishesList);
         console.log(dietaryReqs);
-    }
-
-    getCQRs(){
-        return this.cr;
+        return new CookOrder(this);
     }
 
 }
 
 
 
-class CookOrder implements Order {
+class CookOrder extends Order {
 
-    constructor(private takeOrder: TakeOrder) { }
+    constructor(order: Order) { super(order.getCustomerReqs()); }
 
     execute(): void {
-        const { dishes, dietary } = this.takeOrder.getCQRs();
+        const { dishes, dietary } = this.customerReqs;
         const dishesList = dishes.reduce((acc, dish) => acc += `* ${dish} \n`, '');
         const dietaryReqs = dietary.length ? "They've got some dietary requirements, need to be careful!"
             : "No special dietary requiremetnts, whew!"
@@ -60,7 +71,10 @@ class CookOrder implements Order {
         console.log(dishesList);
         console.log(`${dietaryReqs}\n\n`);
     }
+
 }
+
+
 
 
 
@@ -70,7 +84,9 @@ class Waiter {
 
     constructor () { this.orders = [ ] };
 
-    take(newOrder: Order) {
+    
+    take(customerReqs: CustomerRequirements) {
+        const newOrder = new TakeOrder(customerReqs);
         newOrder.execute();
         console.log('Adding order to list ...');
         this.orders.push(newOrder)
@@ -87,7 +103,35 @@ class Chef {
 
     cook(incomingOrder: Order) {
         incomingOrder.execute();
-        console.log('Starting to cook ...');
+        console.log('Starting to cook ... \n\n');
+    }
+
+}
+
+
+
+class Restaurant {
+
+    private chef: Chef; 
+    private waiter: Waiter;
+
+
+    constructor(chef, waiter){
+        this.chef = chef;
+        this.waiter = waiter;
+    }
+
+
+    // Taking down orders / queueing down the order for the chef 
+    takeDownOrders(customerReqs: CustomerRequirements[]){
+        customerReqs.forEach(reqs => this.waiter.take(reqs));
+    }
+
+
+    cookOrders(){
+        waiter.getOrders().forEach(order => {
+            this.chef.cook(order);
+        })
     }
 
 }
@@ -113,18 +157,10 @@ const customReqs3 = {
     dietary: []
 };
 
-const orders = [customReqs1, customReqs2, customReqs3].map(cr => new TakeOrder(cr));
-
-// Taking down orders / queueing down the order for the chef 
-orders.forEach(order => waiter.take(order));
-
-const cookOrders = waiter.getOrders().map(takeOrder => new CookOrder(<TakeOrder> takeOrder));
-
-cookOrders.forEach(order => chef.cook(order));
-
-    
 
 
+const customerReqs = [customReqs1, customReqs2, customReqs3];
 
-
-
+const fancyPlace = new Restaurant(chef, waiter);
+fancyPlace.takeDownOrders(customerReqs);
+fancyPlace.cookOrders();
